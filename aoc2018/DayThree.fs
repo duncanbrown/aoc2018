@@ -59,9 +59,32 @@ let getOverlapCount claims =
     |> Map.filter (fun _ v -> List.length v > 1)
     |> Map.count
 
+let getWinningClaim claims =
+    let claimsById =
+        claims
+        |> List.map (fun c -> c.Id, c) 
+        |> Map.ofList
+    List.fold makeClaim emptyFabric claims
+    |> Map.filter (fun _ v -> List.length v = 1)
+    |> Map.toList
+    |> List.map (snd >> (List.item 0))
+    |> List.countBy id
+    |> List.find (fun (claimId, pointCount) ->
+        let claim = Map.find claimId claimsById
+        let neededPointCount = claim.Width * claim.Height
+        pointCount = neededPointCount)
+    |> fst
+
 let part1 () =
     let input = File.ReadAllText "c:\\dev\\aoc2018\\input\\3.txt"
     let parserResult = run inputParser input
     match parserResult with
     | Success (claims, _, _) -> getOverlapCount claims
+    | Failure (err,_, _) -> raise(new Exception(err))
+
+let part2 () =
+    let input = File.ReadAllText "c:\\dev\\aoc2018\\input\\3.txt"
+    let parserResult = run inputParser input
+    match parserResult with
+    | Success (claims, _, _) -> getWinningClaim claims
     | Failure (err,_, _) -> raise(new Exception(err))

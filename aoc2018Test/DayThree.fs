@@ -27,3 +27,14 @@ let ``getOverlapCount works`` () =
     let expected = 4
     let actual = getOverlapCount input
     Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``getWinningClaim works`` () =
+    let input = [
+        { Id = "1"; X = 1; Y = 3; Width = 4; Height = 4; };
+        { Id = "2"; X = 3; Y = 1; Width = 4; Height = 4; };
+        { Id = "3"; X = 5; Y = 5; Width = 2; Height = 2; }
+    ]
+    let expected = "3"
+    let actual = getWinningClaim input
+    Assert.Equal(expected, actual)
