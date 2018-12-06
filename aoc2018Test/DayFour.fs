@@ -41,6 +41,6 @@ let ``mostAsleep works`` () =
         WakeUp (DateTime.Parse("1518-11-05 00:55"));
 
     ]
-    let expected = 240
+    let expected = 4455
     let actual = mostAsleep input
     Assert.Equal(expected, actual)

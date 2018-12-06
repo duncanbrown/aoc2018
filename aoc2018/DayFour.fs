@@ -77,12 +77,20 @@ let mostAsleep logs =
 
     let logsById = List.groupBy (fun (id, _, _, _) -> id) processedLogs
 
+    let asleepOnly = List.filter (fun (_,_,_,awake) -> not awake)
+
+    let minuteMostAsleep logs =
+        logs
+        |> asleepOnly
+        |> List.countBy (fun (_,_,m,_) -> m)
+        |> List.maxBy snd
+
     let mostAsleepId =
         logsById
         |> List.maxBy (fun (_, records) ->
             records
-            |> List.filter (fun (_,_,_,awake) -> not awake)
-            |> List.length)
+            |> minuteMostAsleep
+            |> snd)
         |> fst
 
     let logsForMostAsleep =
@@ -91,15 +99,13 @@ let mostAsleep logs =
 
     let minutesMostAsleep =
         logsForMostAsleep
-        |> List.filter (fun (_,_,_,awake) -> not awake)
-        |> List.countBy (fun (_,_,m,_) -> m)
-        |> List.maxBy snd
+        |> minuteMostAsleep
         |> fst
 
     mostAsleepId * minutesMostAsleep
         
     
-let part1 () =
+let part2 () =
     let input = File.ReadAllText "c:\\dev\\aoc2018\\input\\4.txt"
     let parserResult = run parser input
     match parserResult with
