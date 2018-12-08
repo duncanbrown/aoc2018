@@ -3,7 +3,9 @@
 open System
 open System.IO
 
-
+let distance (x: int,y: int) (x',y') =
+    Math.Abs (x - x') +
+    Math.Abs (y - y')
 
 let sizeOfLargestArea points =    
     let minX = points |> List.map fst |> List.min
@@ -20,9 +22,6 @@ let sizeOfLargestArea points =
         x = maxX + buffer ||
         y = minY - buffer ||
         y = maxY + buffer
-    let distance (x: int,y: int) (x',y') =
-        (Math.Max (x,x')) - (Math.Min (x,x')) +
-        (Math.Max (y,y')) - (Math.Min (y,y'))
     let closestPoint p =
         let distances = 
             points
@@ -46,6 +45,27 @@ let sizeOfLargestArea points =
         |> List.max
     maxFiniteArea
 
+let sizeOfRegion maxDistance points =
+    let minX = points |> List.map fst |> List.min
+    let minY = points |> List.map snd |> List.min
+    let maxX = points |> List.map fst |> List.max
+    let maxY = points |> List.map snd |> List.max
+    let buffer = 1000
+    let grid =
+        List.allPairs
+            [minX - buffer .. maxX + buffer]
+            [minY - buffer .. maxY + buffer]
+    let distanceFromAllPoints p =
+        points
+        |> List.sumBy (distance p)
+    let populatedGrid = 
+        grid
+        |> List.map (fun p -> p , distanceFromAllPoints p)
+    let region =
+        populatedGrid
+        |> List.filter (fun (_, d) -> d < maxDistance)
+    List.length region
+
 let part1 () =
     let input = File.ReadAllLines "c:\\dev\\aoc2018\\input\\6.txt"
     let points =
@@ -54,3 +74,12 @@ let part1 () =
         |> Array.map (fun a -> int a.[0] , int a.[1])
         |> List.ofArray
     sizeOfLargestArea points
+
+let part2 () =
+    let input = File.ReadAllLines "c:\\dev\\aoc2018\\input\\6.txt"
+    let points =
+        input
+        |> Array.map (fun s -> (s.Trim ()).Split (',') )
+        |> Array.map (fun a -> int a.[0] , int a.[1])
+        |> List.ofArray
+    sizeOfRegion 10000 points
