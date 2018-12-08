@@ -4,7 +4,7 @@ open System
 
 [<EntryPoint>]
 let main argv =
-    DaySeven.part1 ()
-        |> printfn "%s"
+    DaySeven.part2 ()
+        |> printfn "%i"
     Console.ReadLine () |> ignore
     0 // return an integer exit code

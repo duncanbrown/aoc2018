@@ -20,6 +20,21 @@ let ``order works`` () =
     Assert.Equal(expected , actual)
 
 [<Fact>]
+let ``duration works`` () =
+    let input = [
+        'C', 'A';
+        'C', 'F';
+        'A', 'B';
+        'A', 'D';
+        'B', 'E';
+        'D', 'E';
+        'F', 'E';
+    ]
+    let expected = 15
+    let actual = duration 2 0 input
+    Assert.Equal(expected , actual)
+
+[<Fact>]
 let ``Input parser works`` () =
     let input = "Step C must be finished before step A can begin. \nStep C must be finished before step F can begin."
     let expected = [
