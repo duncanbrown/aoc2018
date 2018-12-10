@@ -60,14 +60,14 @@ let tick pointsAndVelocities =
         (x+dx,y+dy),(dx,dy))
 
 let tickUntilClose pointsAndVelocities =
-    let rec loop pv =
+    let rec loop pv i =
         let (minX, minY, maxX, maxY) =
             pv |> List.map fst |> bounds
         if (maxX - minX) < 100 && (maxY - minY) < 100
-        then pv
+        then pv, i
         else
-            loop (tick pv)
-    loop pointsAndVelocities
+            loop (tick pv) (i+1)
+    loop pointsAndVelocities 0
 
 
 
@@ -90,12 +90,13 @@ let printPoints points =
     )
 
 let runSimulation pointsAndVelocities =
-    let rec loop pv =
+    let rec loop pv i =
+        printfn "%i" i
         printPoints (List.map fst pv)
         Console.ReadKey () |> ignore
-        loop (tick pv)
-
-    loop (tickUntilClose pointsAndVelocities)
+        loop (tick pv) (i+1)
+    let closePoints, closeTicks = tickUntilClose pointsAndVelocities
+    loop closePoints closeTicks
 
 
 
