@@ -3,6 +3,7 @@
 open System
 open System.Threading
 
+
 type Tile =
       Straight
     | TurnRight
