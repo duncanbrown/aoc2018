@@ -1,6 +1,7 @@
 ﻿module DayThirteen
 
 open System
+open System.Threading
 
 type Tile =
       Straight
@@ -20,14 +21,37 @@ type TurnBehaviour =
     | GoStraight
     | GoRight
 
-let tickOrCrash (tiles: Tile[][]) carts =
+let tick (tiles: Tile[][]) carts =
+    //Thread.Sleep(1000) 
+    //Console.Clear()
+    //tiles
+    //|> Array.iteri (fun rowi row ->
+    //    row
+    //    |> Array.iteri (fun coli cell ->
+    //        let c = 
+    //            match carts |> List.tryFind (fun (p,_,_) -> p = (coli,rowi)) with
+    //            | Some (_,f,_) ->
+    //                match f with
+    //                | Up -> '^'
+    //                | Down -> 'v'
+    //                | Left -> '<'
+    //                | Right -> '>'
+    //            | None ->
+    //                match cell with
+    //                | Straight -> '-'
+    //                | TurnRight -> '/'
+    //                | TurnLeft -> '\\'
+    //                | Intersection -> '+'
+    //                | Empty -> ' '
+    //        printf "%c" c)
+    //    printfn "")
     let cartsInOrder =
         carts
         |> Seq.sortBy (fun ((x,y), _, _) -> y,x)
         |> List.ofSeq
     let rec loop remaining acc =
         match remaining with        
-        | []      -> Choice1Of2 acc
+        | []      -> acc
         | c :: cs ->
             let (x,y), facing, nextTurn = c
             let x',y' =
@@ -37,12 +61,14 @@ let tickOrCrash (tiles: Tile[][]) carts =
                 | Left  -> x-1,y
                 | Right -> x+1,y
             let otherCartPositions = List.append acc cs
-            let crashPos =
+            let crashCartO =
                 otherCartPositions
                 |> List.tryFind (fun (p, _,_) -> p = (x',y'))
-                |> Option.map (fun (p, _,_) -> p)
-            match crashPos with
-            | Some p -> Choice2Of2 p
+            match crashCartO with
+            | Some crashCart ->
+                let acc' = acc |> List.except [crashCart]
+                let cs' = cs |> List.except [crashCart]
+                loop cs' acc'
             | None ->
                 let facing', nextTurn' =
                     match tiles.[y'].[x'] with
@@ -75,14 +101,15 @@ let tickOrCrash (tiles: Tile[][]) carts =
                             | Left  -> Up, GoLeft
                             | Right -> Down, GoLeft
                         | GoStraight -> facing, GoRight
-                loop cs (((x',y'), facing', nextTurn') :: acc)
+                let acc' = ((x',y'), facing', nextTurn') :: acc
+                loop cs acc'
     loop cartsInOrder []                    
 
-let tickUntilCrash tiles carts =
+let tickUntilOneLeft tiles carts =
     let rec loop c =
-        match tickOrCrash tiles c with
-        | Choice1Of2 c' -> loop c'
-        | Choice2Of2 p  -> p
+        match tick tiles c with
+        | [single]     -> single
+        | many         -> loop many
     loop carts
 
 
@@ -132,6 +159,16 @@ let input =
 
 //let input =
 //    [|
+//    @"/>-<\  ";
+//    @"|   |  ";
+//    @"| /<+-\";
+//    @"| | | v";
+//    @"\>+</ |";
+//    @"  |   ^";
+//    @"  \<->/"|]
+
+//let input =
+//    [|
 //    @"/->-\        ";
 //    @"|   |  /----\";
 //    @"| /-+--+-\  |";
@@ -139,6 +176,8 @@ let input =
 //    @"\-+-/  \-+--/";
 //    @"    \------/ "|]
 
-let part1 () =
+let part2 () =
     let tiles, carts = parseInput input
-    tickUntilCrash tiles carts
+    let pos,_,_ = tickUntilOneLeft tiles carts
+    pos
+    
