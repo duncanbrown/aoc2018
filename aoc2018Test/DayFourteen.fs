@@ -4,10 +4,10 @@ open Xunit
 open DayFourteen
 
 [<Theory>]
-[<InlineData(9, "5158916779")>]
-[<InlineData(5, "0124515891")>]
-[<InlineData(18, "9251071085")>]
-[<InlineData(2018, "5941429882")>]
-let ``getNext10 works`` after (expected: string) =
-    let actual = getNext10 after
-    Assert.Equal(expected |> Seq.map (string >> int) |> List.ofSeq, actual)
+[<InlineData("51589", 9)>]
+[<InlineData("01245", 5)>]
+[<InlineData("92510", 18)>]
+[<InlineData("59414", 2018)>]
+let ``getNumberToLeftOf works`` recipe expected =
+    let actual = getNumberToLeftOf recipe
+    Assert.Equal(expected, actual)
