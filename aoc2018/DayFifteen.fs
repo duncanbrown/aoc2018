@@ -105,13 +105,24 @@ type Move =
 
 type PathInfo = { firstStep: int * int; lastStep: int * int }
 
+let areAllEnemiesSurrounded unit world =
+    let oppositeUnitPositions =
+        world
+        |> getUnitsAndPositions
+        |> Array.filter (fun (_,c) -> isOppositeUnit unit (Unit c))
+        |> Array.map fst
+    oppositeUnitPositions
+    |> Array.forall (fun (x,y) ->
+        [x-1,y;x+1,y;x,y-1;x,y+1]
+        |> List.map (fun p' -> getCell world p')
+        |> List.forall (fun c -> not (isOpen c)))
+
 let getNextMove world unit pos =
-    let rec buildPaths (paths: (int * int) list list) positionsPassed =
-        let getSteps path =
-            let (x,y) :: _ = path
+    let rec buildPaths (paths: (int * int) list list) positionsPassed firstStep =
+        let getSteps (path: (int * int) list) =
+            let (x,y) = path.[0]
             let candidates =
                 [x-1,y;x+1,y;x,y-1;x,y+1]
-                |> List.except [pos]
                 |> List.map (fun p -> p, getCell world p)
             if List.exists (fun (_,cell) -> isOppositeUnit unit cell) candidates
             then Choice1Of2 ()
@@ -135,7 +146,7 @@ let getNextMove world unit pos =
             let positionOfEnemyToTarget =
                 pathsAlreadyAtEnemies
                 |> List.map (fun p ->
-                    let endOfPath :: _ = p
+                    let endOfPath = p.[0]
                     getAdjacentEnemies world unit endOfPath
                     |> List.map fst
                     |> firstByReadingOrder
@@ -145,14 +156,14 @@ let getNextMove world unit pos =
             let pathsLeadingToEnemyToTarget =
                 pathsAlreadyAtEnemies
                 |> List.filter (fun p -> 
-                    let endOfPath :: _  = p
+                    let endOfPath = p.[0]
                     getAdjacentEnemies world unit endOfPath
                     |> List.map fst
                     |> List.contains positionOfEnemyToTarget)
             let firstStepsOfPathsLeadingToEnemyToTarget =
                 pathsLeadingToEnemyToTarget
                 |> List.map (fun path ->
-                    if List.length path = 1 then path.[0] else path.[path.Length - 2])
+                    if firstStep then pos else path.[1])
             Some (firstByReadingOrder firstStepsOfPathsLeadingToEnemyToTarget |> Option.get)
         else          
             let pathsAndNextStepsUnwrapped =
@@ -163,7 +174,7 @@ let getNextMove world unit pos =
             let paths' =
                 pathsAndNextStepsUnwrapped
                 |> Seq.filter (fun (_, steps) -> not (List.isEmpty steps))
-                |> Seq.map (fun (p, steps) -> steps |> List.map (fun s -> s :: p)) // if p.lastStep = p.firstStep then { firstStep = s; lastStep = s; } else { p with lastStep = s}))
+                |> Seq.map (fun (p, steps) -> steps |> List.map (fun s -> if firstStep then [s;s] else [s;p.[1]])) // if p.lastStep = p.firstStep then { firstStep = s; lastStep = s; } else { p with lastStep = s}))
                 |> Seq.concat
                 |> List.ofSeq
             if List.isEmpty paths'
@@ -175,13 +186,24 @@ let getNextMove world unit pos =
                     |> Seq.concat
                     |> Set.ofSeq
                 let positionsPassed' = Set.union positionsPassed newSteps
-                buildPaths paths' positionsPassed'
-    let stepToTake =
-        match buildPaths [[pos]] (Set.singleton pos) with
-        | None   -> CantMove
-        | Some s ->
-            if s = pos then StayAndFight else MoveTo s
-    stepToTake
+                buildPaths paths' positionsPassed' false
+    let allEnemiesSurrounded =
+        areAllEnemiesSurrounded unit world
+    if allEnemiesSurrounded
+    then
+        let x,y = pos
+        let nextToEnemy =
+            [x-1,y;x+1,y;x,y-1;x,y+1]
+            |> List.map (fun p' -> getCell world p')
+            |> List.exists (fun c -> isOppositeUnit unit c)
+        if nextToEnemy then StayAndFight else CantMove
+    else
+        let stepToTake =
+            match buildPaths [[pos]] (Set.singleton pos) true with
+            | None   -> CantMove
+            | Some s ->
+                if s = pos then StayAndFight else MoveTo s
+        stepToTake
             
 
 let tick unit pos world =
@@ -300,18 +322,18 @@ let part1 () =
 
 let part2 () =
     let sw = Stopwatch.StartNew()
-    let input = @"#######
-#.G...#
-#...EG#
-#.#.#G#
-#..G#E#
-#.....#
-#######"
-    //let input = System.IO.File.ReadAllLines "c:\\dev\\aoc2018\\input\\15.txt"
+//    let input = @"#######
+//#.G...#
+//#...EG#
+//#.#.#G#
+//#..G#E#
+//#.....#
+//#######"
+    let input = System.IO.File.ReadAllLines "c:\\dev\\aoc2018\\input\\15.txt"
     let candidates = Seq.initInfinite id |> Seq.skip 4
     let r =
         candidates
-        |> Seq.map (fun p -> p, parseWorld (input.Split(Environment.NewLine)) p |> run)
+        |> Seq.map (fun p -> p, parseWorld (input) p |> run)
         |> Seq.pick (fun (p,r) -> r |> Option.map (fun x -> p,x) )
         |> snd
     printfn "%A" sw.Elapsed
