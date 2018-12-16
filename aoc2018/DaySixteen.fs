@@ -59,6 +59,49 @@ let behavesLikeOpCodes sample =
         |> Seq.filter (fun opCode -> couldBe opCode sample)
         |> Seq.length
 
+let determineOpCodes samples =
+    let candidatesById =
+        samples
+        |> Seq.map (fun s ->
+            let _,(instruction: int[]),_ = s
+            let opCodeId: int = instruction.[0]
+            let candidates = 
+                allOpCodes
+                |> Seq.filter (fun opCode -> couldBe opCode s)
+                |> Set.ofSeq
+            opCodeId, candidates)
+        |> Seq.groupBy fst
+        |> Seq.map (fun (id, g) -> id, g |> Seq.map snd |> Set.intersectMany)
+        |> List.ofSeq
+
+    let rec findAssignment i assignments =
+        if i = List.length candidatesById
+        then Some assignments
+        else
+            let id, candidates = candidatesById.[i]
+            let assigned = assignments |> Map.toList |> List.map snd |> Set.ofList
+            let candidates' = Set.difference candidates assigned
+            if Set.isEmpty candidates'
+            then None
+            else
+                candidates'
+                |> Seq.tryPick (fun c ->
+                    let assignments' = Map.add id c assignments
+                    findAssignment (i+1) assignments')
+
+    match findAssignment 0 Map.empty with
+    | Some a -> a
+    | None -> raise (Exception())
+
+let runProgram program =
+    program
+    |> List.fold
+        (fun acc next ->
+            let registers = Array.copy acc
+            execute registers next
+            registers)
+        [|0;0;0;0|]
+
 let inputParser =
     let parseSample =
         let parseArray =
@@ -85,13 +128,35 @@ let inputParser =
             let! after = parseArray
             return before, Array.ofList instruction, after
         }
-    many parseSample
+    let parseInstruction =
+        many1 (pint32 .>> opt (pchar ' ')) .>> spaces
+    (many parseSample)
+        .>> spaces
+        .>>. (many parseInstruction)
 
 let part1 () =
     let input = System.IO.File.ReadAllText "c:\\dev\\aoc2018\\input\\16.txt"
     match run inputParser input with
-    | Success (samples,_,_) ->
+    | Success ((samples, program),_,_) ->
         samples
         |> List.filter (fun s -> behavesLikeOpCodes s >= 3)
         |> List.length
+    | Failure (err,_, _) -> raise(new Exception(err))
+
+let part2 () =
+    let input = System.IO.File.ReadAllText "c:\\dev\\aoc2018\\input\\16.txt"
+    match run inputParser input with
+    | Success ((samples, program),_,_) ->
+        let opCodes = 
+            samples
+            |> determineOpCodes
+        let instructions =
+            program
+            |> List.map (fun ns ->
+                let opCodeId :: abc = ns
+                let opCode = Map.find opCodeId opCodes
+                opCode, abc.[0], abc.[1], abc.[2]
+                )
+        let result = runProgram instructions
+        result.[0]
     | Failure (err,_, _) -> raise(new Exception(err))
