@@ -80,7 +80,7 @@ let waterCanReach world minY maxY =
         |> Array.sumBy
             (fun row -> row |> Array.sumBy (fun cell ->
                 match cell with
-                | WaterHasPassed -> 1
+                //| WaterHasPassed -> 1
                 | WaterAtRest -> 1
                 | _ -> 0))
 
