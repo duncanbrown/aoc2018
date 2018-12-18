@@ -69,11 +69,18 @@ let tick (world: World) =
         
     
 let run world iterations =
-    let rec loop w i =
+    let rec loop w i ws =
         let w' = tick w
         let i' = i+1
-        if i' = iterations then w' else loop w' i'
-    loop world 0
+        if i' = iterations then w'
+        else
+            match ws |> List.rev |> List.tryFindIndex (fun c -> c = w') with
+            | None -> loop w' i' (w' :: ws)
+            | Some previousIndex ->
+                let repeatInterval = i' - previousIndex
+                let jumpTo = Seq.initInfinite (fun j -> i' + (repeatInterval * j)) |> Seq.takeWhile (fun n -> n < iterations) |> Seq.last
+                loop w' jumpTo []
+    loop world 0 [world]
 
 let buildWorld inputLines =
     inputLines
@@ -101,7 +108,7 @@ let part1 () =
     //let inputLines = input.Split(Environment.NewLine) |> Array.map (fun s -> s.Trim())
     let inputLines = System.IO.File.ReadAllLines "c:\\dev\\aoc2018\\input\\18.txt" |> Array.map (fun s -> s.Trim())
     let world = buildWorld inputLines
-    let w = run world 10
+    let w = run world 1000000000
     print w
     let trees = 
         w |> Array.sumBy (fun row ->
