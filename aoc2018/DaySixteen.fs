@@ -8,39 +8,39 @@ type OpCode =
 
 type Instruction = OpCode * int * int * int
 
-let execute (registers: int[]) = function
+let execute (registers: int64[]) = function
     |  Addr, a, b, c ->
         registers.[c] <- registers.[a] + registers.[b]
     |  Addi, a, b, c ->
-        registers.[c] <- registers.[a] + b
+        registers.[c] <- registers.[a] + (int64 b)
     |  Mulr, a, b, c ->
         registers.[c] <- registers.[a] * registers.[b]
     |  Muli, a, b, c ->
-        registers.[c] <- registers.[a] * b
+        registers.[c] <- registers.[a] * (int64 b)
     |  Banr, a, b, c ->
         registers.[c] <- registers.[a] &&& registers.[b]
     |  Bani, a, b, c ->
-        registers.[c] <- registers.[a] &&& b
+        registers.[c] <- registers.[a] &&& (int64 b)
     |  Borr, a, b, c ->
         registers.[c] <- registers.[a] ||| registers.[b]
     |  Bori, a, b, c ->
-        registers.[c] <- registers.[a] ||| b
+        registers.[c] <- registers.[a] ||| (int64 b)
     |  Setr, a, _, c ->
         registers.[c] <- registers.[a]
     |  Seti, a, _, c ->
-        registers.[c] <- a
+        registers.[c] <- int64 a
     |  Gtir, a, b, c ->
-        registers.[c] <- if a > registers.[b] then 1 else 0
+        registers.[c] <- if int64 a > registers.[b] then 1L else 0L
     |  Gtri, a, b, c ->
-        registers.[c] <- if registers.[a] > b then 1 else 0
+        registers.[c] <- if registers.[a] > int64 b then 1L else 0L
     |  Gtrr, a, b, c ->
-        registers.[c] <- if registers.[a] > registers.[b] then 1 else 0
+        registers.[c] <- if registers.[a] > registers.[b] then 1L else 0L
     |  Eqir, a, b, c ->
-        registers.[c] <- if a = registers.[b] then 1 else 0
+        registers.[c] <- if int64 a = registers.[b] then 1L else 0L
     |  Eqri, a, b, c ->
-        registers.[c] <- if registers.[a] = b then 1 else 0
+        registers.[c] <- if registers.[a] = int64 b then 1L else 0L
     |  Eqrr, a, b, c ->
-        registers.[c] <- if registers.[a] = registers.[b] then 1 else 0
+        registers.[c] <- if registers.[a] = registers.[b] then 1L else 0L
 
 
 let couldBe opCode sample =
@@ -100,63 +100,63 @@ let runProgram program =
             let registers = Array.copy acc
             execute registers next
             registers)
-        [|0;0;0;0|]
+        [|0L;0L;0L;0L|]
 
-let inputParser =
-    let parseSample =
-        let parseArray =
-            parse {
-                do! skipChar '['
-                let! a = pint32
-                do! skipString ", "
-                let! b = pint32
-                do! skipString ", "
-                let! c = pint32
-                do! skipString ", "
-                let! d = pint32
-                do! skipChar ']'
-                do! spaces
-                return [|a;b;c;d|]
-            }
-        parse {
-            do! skipString "Before:"
-            do! spaces
-            let! before = parseArray
-            let! instruction = many (pint32 .>> spaces)
-            do! skipString "After:"
-            do! spaces
-            let! after = parseArray
-            return before, Array.ofList instruction, after
-        }
-    let parseInstruction =
-        many1 (pint32 .>> opt (pchar ' ')) .>> spaces
-    (many parseSample)
-        .>> spaces
-        .>>. (many parseInstruction)
+//let inputParser =
+//    let parseSample =
+//        let parseArray =
+//            parse {
+//                do! skipChar '['
+//                let! a = pint32
+//                do! skipString ", "
+//                let! b = pint32
+//                do! skipString ", "
+//                let! c = pint32
+//                do! skipString ", "
+//                let! d = pint32
+//                do! skipChar ']'
+//                do! spaces
+//                return [|a;b;c;d|]
+//            }
+//        parse {
+//            do! skipString "Before:"
+//            do! spaces
+//            let! before = parseArray
+//            let! instruction = many (pint32 .>> spaces)
+//            do! skipString "After:"
+//            do! spaces
+//            let! after = parseArray
+//            return before, Array.ofList instruction, after
+//        }
+//    let parseInstruction =
+//        many1 (pint32 .>> opt (pchar ' ')) .>> spaces
+//    (many parseSample)
+//        .>> spaces
+//        .>>. (many parseInstruction)
 
-let part1 () =
-    let input = System.IO.File.ReadAllText "c:\\dev\\aoc2018\\input\\16.txt"
-    match run inputParser input with
-    | Success ((samples, program),_,_) ->
-        samples
-        |> List.filter (fun s -> behavesLikeOpCodes s >= 3)
-        |> List.length
-    | Failure (err,_, _) -> raise(new Exception(err))
+//let part1 () =
+//    let input = System.IO.File.ReadAllText "c:\\dev\\aoc2018\\input\\16.txt"
+//    match run inputParser input with
+//    | Success ((samples, program),_,_) ->
+//        samples
+//        |> List.filter (fun s -> behavesLikeOpCodes s >= 3)
+//        |> List.length
+//    | Failure (err,_, _) -> raise(new Exception(err))
 
-let part2 () =
-    let input = System.IO.File.ReadAllText "c:\\dev\\aoc2018\\input\\16.txt"
-    match run inputParser input with
-    | Success ((samples, program),_,_) ->
-        let opCodes = 
-            samples
-            |> determineOpCodes
-        let instructions =
-            program
-            |> List.map (fun ns ->
-                let opCodeId :: abc = ns
-                let opCode = Map.find opCodeId opCodes
-                opCode, abc.[0], abc.[1], abc.[2]
-                )
-        let result = runProgram instructions
-        result.[0]
-    | Failure (err,_, _) -> raise(new Exception(err))
+//let part2 () =
+//    let input = System.IO.File.ReadAllText "c:\\dev\\aoc2018\\input\\16.txt"
+//    match run inputParser input with
+//    | Success ((samples, program),_,_) ->
+//        let opCodes = 
+//            samples
+//            |> determineOpCodes
+//        let instructions =
+//            program
+//            |> List.map (fun ns ->
+//                let opCodeId :: abc = ns
+//                let opCode = Map.find opCodeId opCodes
+//                opCode, abc.[0], abc.[1], abc.[2]
+//                )
+//        let result = runProgram instructions
+//        result.[0]
+//    | Failure (err,_, _) -> raise(new Exception(err))
