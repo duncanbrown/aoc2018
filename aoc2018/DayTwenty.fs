@@ -47,8 +47,7 @@ let rec buildTree s =
         let afterBranchless = s.Substring(branchless.Length)
         if String.length afterBranchless = 0
         then
-            //branchless |> substrings |> List.map (fun s -> Tree(s, []))
-            [Tree(s,[])]
+            branchless |> substrings |> List.map (fun s -> Tree(s, []))
         else
             let branches, remaining =
                 getBranches (afterBranchless.Substring(1))
@@ -56,7 +55,6 @@ let rec buildTree s =
             then
                 let branch = List.head branches
                 let points = substrings branch
-                //let furthest = branch.Substring(branch.Length / 2)
                 points
                 |> List.map (fun s -> buildTree (branchless + s))
                 |> List.concat
@@ -65,7 +63,13 @@ let rec buildTree s =
             else
                 let children = branches |> List.map buildTree
                 if remaining.Length > 0 then raise (Exception())
-                children |> List.map (fun cs -> Tree(branchless, cs))
+                branchless
+                |> substrings
+                |> List.map (fun s ->
+                    Tree(s, []))
+                |> List.append
+                    (children |> List.map (fun cs -> Tree(branchless,cs)))
+                
 
 let processTrees trees =
     let rec processTree parent tree =
@@ -83,12 +87,12 @@ let processTrees trees =
 
 let rec getLeafData tree =
     let (Tree(data, children)) = tree
-    if List.length children = 0
-    then [data]
-    else children |> List.map getLeafData |> List.concat
+    //if List.length children = 0
+    //then [data]
+    data :: (children |> List.map getLeafData |> List.concat)
 
 
-let part1 () =
+let part2 () =
     let input =
         (System.IO.File.ReadAllText "c:\\dev\\aoc2018\\input\\20.txt").TrimEnd().Trim([|'^';'$'|])
     let t = buildTree input
@@ -97,4 +101,5 @@ let part1 () =
         endPoints
         |> List.groupBy fst
     g |> List.map (fun (pos, paths) -> paths |> List.map snd |> List.min)
-    |> List.max
+    |> List.filter (fun s -> s >= 1000)
+    |> List.length
